@@ -15,6 +15,10 @@ use ui_chain::{layer_view, Caveats};
 use ui_part::Parts;
 
 pub const CELL: &str = "cr.devices";
+/// The one grant this cell's own key holds, minted by the node for exactly what it reads (`ce-iam grant --to <cell key>
+/// --action <each>`, kept with the key in `<ce data dir>/cell-keys/cr.devices/`); every source token is attenuated from it
+/// ([`ui_chain::source_token`]). A taken backend holds this, never the node's root.
+pub const GRANT: &[&str] = &["cell.install:list", "fleet.inventory:read", "ui.trace:write", "delegate:1"];
 pub const EVERY_S: u64 = 15;
 pub const PROBE_TIMEOUT_MS: u64 = 4000;
 pub const STREAM_MAX_S: u64 = 30;

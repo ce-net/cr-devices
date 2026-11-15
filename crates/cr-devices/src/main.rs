@@ -112,7 +112,8 @@ fn sources(s: &State) -> Vec<Source> {
 }
 
 async fn serve() -> Result<(), String> {
-    let me = ce_gate::node_identity().map_err(|e| e.to_string())?;
+    // this cell's own key and narrow grant (never the node's key); the gate roots callers' chains at the grant's root
+    let me = ui_chain::init(CELL)?.root();
     let started = Instant::now();
     let st: Arc<RwLock<State>> = Arc::default();
     let (tx, rx) = watch::channel(0u64);
@@ -124,7 +125,7 @@ async fn serve() -> Result<(), String> {
         }
     });
     let (s1, s2, s3, s4, s5) = (st.clone(), st.clone(), st.clone(), st.clone(), st.clone());
-    let gate = ce_gate::Gate::<CrDevices>::new(me.node_id(), ce_gate::mesh_roots()).into_fn();
+    let gate = ce_gate::Gate::<CrDevices>::new(me, ce_gate::mesh_roots()).into_fn();
     let v2 = Server::<CrDevices>::new(gate)
         .on::<HealthOp, _, _>(move |_: (), _| async move { Ok(Health { ok: true, version: env!("CARGO_PKG_VERSION").into(), uptime_s: started.elapsed().as_secs() }) })
         .on::<List, _, _>(move |q: DevicesQuery, who| {
@@ -182,7 +183,7 @@ async fn serve() -> Result<(), String> {
         } }).collect();
         old::DevicesView { rows, as_of_ms: s.as_of_ms, sources: srcs, narrowed, can_ask, call_id: String::new() }
     };
-    let gate1 = ce_gate::Gate::<old::CrDevices>::new(me.node_id(), ce_gate::mesh_roots()).into_fn();
+    let gate1 = ce_gate::Gate::<old::CrDevices>::new(me, ce_gate::mesh_roots()).into_fn();
     let v1s = Server::<old::CrDevices>::new(gate1)
         .on::<old::HealthOp, _, _>(move |_: (), _| async move { Ok(old::Health { ok: true, version: env!("CARGO_PKG_VERSION").into(), uptime_s: started.elapsed().as_secs() }) })
         .on::<old::List, _, _>(move |ask: old::DevicesAsk, who| { let st = s4.clone(); async move { Ok(Ok(list1(st, ask, who).await)) } })
