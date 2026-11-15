@@ -137,9 +137,9 @@ async fn serve() -> Result<(), String> {
                 Ok(rows)
             }
         })
-        .on::<Sources, _, _>(move |_: (), _| {
+        .on::<Sources, _, _>(move |_: (), who| {
             let st = s2.clone();
-            async move { Ok(sources(&*st.read().await)) }
+            async move { Ok(sources_for(&who, sources(&*st.read().await))) }
         })
         .stream::<Watch, _, _>(move |q: DevicesQuery, who, sink| {
             let (st, mut rx) = (s3.clone(), rx.clone());

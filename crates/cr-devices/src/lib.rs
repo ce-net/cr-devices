@@ -157,3 +157,10 @@ pub fn devices() -> Vec<Node> {
     }
     v
 }
+
+/// The source lines this caller may see: filtered by the same `node` caveat as the rows (a mesh-wide line, with no
+/// node, is not shown to a caller caveated on nodes), so a narrow viewer does not learn other nodes' names.
+pub fn sources_for(c: &ce_wire::Caller, all: Vec<Source>) -> Vec<Source> {
+    let cv = Caveats::of(c, CELL);
+    all.into_iter().filter(|s| cv.0.get("node").is_none() || (!s.node.is_empty() && cv.allows("node", &s.node))).collect()
+}

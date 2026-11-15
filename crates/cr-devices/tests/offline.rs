@@ -13,12 +13,12 @@ fn caller(abilities: &[&str]) -> Caller {
 }
 
 const ROOT: &[&str] = &["cr.devices:read", "cr.devices:net", "cr.devices:passkeys"];
-const OPERATOR: &[&str] = &["cr.devices:read", "cr.devices:where:node=foreman-ops-1"];
+const OPERATOR: &[&str] = &["cr.devices:read", "cr.devices:where:node=ops-1"];
 const ALL: DevicesQuery = DevicesQuery { q: None, only_offline: None };
 
 fn nodes() -> Vec<Node> {
     vec![
-        Node { id: "aa".into(), name: "foreman-ops-1".into(), addrs: vec!["127.0.0.1".into()], local: true },
+        Node { id: "aa".into(), name: "ops-1".into(), addrs: vec!["127.0.0.1".into()], local: true },
         Node { id: "bb".into(), name: "leif-desk".into(), addrs: vec!["10.77.76.155".into(), "100.120.94.24".into()], local: false },
         Node { id: "cc".into(), name: "debian".into(), addrs: vec!["10.77.37.223".into()], local: false },
     ]
@@ -62,7 +62,7 @@ fn the_operator_sees_ops_1_only_and_no_part_fields() {
     let up = Probe::Up { rtt_ms: 3, cells: Some(30) };
     let t = table(&[up.clone(), up.clone(), up], &BTreeMap::new(), 1_000);
     let rows = for_caller(&caller(OPERATOR), &ALL, &t);
-    assert_eq!(rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>(), ["foreman-ops-1"]);
+    assert_eq!(rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>(), ["ops-1"]);
     assert!(rows.iter().all(|r| r.tailscale.is_none() && r.passkeys.is_none()));
     let wire = ce_wire::postcard::to_stdvec(&rows).unwrap();
     for leak in ["leif-desk", "debian", "100.120.94.24"] {
@@ -72,4 +72,16 @@ fn the_operator_sees_ops_1_only_and_no_part_fields() {
     assert_eq!(root.len(), 3);
     assert_eq!(root.iter().find(|r| r.name == "leif-desk").and_then(|r| r.tailscale.as_ref()).map(|t| t.ip.as_str()), Some("100.120.94.24"));
     assert!(root.iter().all(|r| !r.addrs.iter().any(|a| is_tailnet(a))), "tailnet addresses only in the Part");
+}
+
+#[test]
+fn source_lines_follow_the_node_caveat() {
+    let all = vec![
+        Source { cell: "net.mesh doors".into(), node: "3/5 answered".into(), state: SourceState::Live, ms: 0 },
+        Source { cell: "fleet.inventory".into(), node: "leif-desk".into(), state: SourceState::Live, ms: 1 },
+        Source { cell: "fleet.inventory".into(), node: "ops-1".into(), state: SourceState::Live, ms: 1 },
+    ];
+    assert_eq!(sources_for(&caller(ROOT), all.clone()).len(), 3);
+    let op = sources_for(&caller(OPERATOR), all);
+    assert_eq!(op.iter().map(|s| s.node.as_str()).collect::<Vec<_>>(), ["ops-1"]);
 }
