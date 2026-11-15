@@ -1,0 +1,21 @@
+# One repo = one cell = one function. Every node of the mesh for the Devices panel.
+[cell]
+api = "cr.devices"
+crate = "cr-devices"
+args = ["serve"]
+kind = "function"
+keep = true  # its background probe must keep running
+# Cells this one calls, as <api>@<major>; none is started by it (a view cell reports a missing source, it does not need it to start).
+depends_on = []
+
+[launch]
+health = "HealthOp"
+start_timeout_ms = 5000
+restart_backoff_ms = [1000, 300000]
+
+[placement]
+# active-active, stateless: any replica answers (control-room docs/DESIGN.md section 9)
+nodes = ["foreman-ops-1", "leif-desk"]
+
+[limits]
+disk_bytes = "128M"
