@@ -18,3 +18,16 @@ restart_backoff_ms = [1000, 300000]
 
 [limits]
 disk_bytes = "128M"
+
+[stamp]
+id = "cell:cr.devices"
+kind = "cell"
+path = "cell.toml"
+updated_at = 2026-11-15T22:05:54Z
+version = "0.5"
+access = "public"
+canonical_of = []
+duplicate_of = ""
+owner = "foreman/lead"
+source_of_truth = "https://github.com/ce-net/cr-devices"
+stale_after = 180
